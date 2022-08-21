@@ -5,6 +5,12 @@
 /.pnp
 .pnp.js
 .idea/
+/dist/*
+/.cache
+/.cache/*
+dist/*
+*.log
+dist
 
 # testing
 /coverage
