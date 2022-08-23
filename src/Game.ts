@@ -1,4 +1,5 @@
 import { Board, Cell, DeadZone } from "./Board";
+import { Lion } from "./Piece";
 import { Player, PlayerType } from "./Player";
 
 
@@ -25,7 +26,74 @@ export class Game {
         this.currentPlayer = this.upperPlayer;
         this.board.render();
         this.renderInfo();
+        this.board._el.addEventListener('click', e => {
+            if (this.state === 'END') {
+                return false
+            }
 
+            if (e.target instanceof HTMLElement) {
+                let cellEl: HTMLElement;
+                if (e.target.classList.contains('cell')) {
+                    cellEl = e.target;
+                } else if (e.target.classList.contains('piece')) {
+                    cellEl = e.target.parentElement;
+                } else {
+                    return false;
+                }
+                const cell = this.board.map.get(cellEl);
+
+                if (this.isCurrentUserPiece(cell)) {
+                    this.select(cell);
+                    return false;
+                }
+
+                if (this.selectedCell) {
+                    this.move(cell);
+                    this.changeTurn();
+                }
+            }
+        })
+    }
+
+    isCurrentUserPiece(cell: Cell) {
+        return cell !== null && cell.getPiece() !== null && cell.getPiece()?.ownerType === this.currentPlayer.type
+    }
+
+    select(cell: Cell) {
+        if (cell.getPiece() === null) {
+            return;
+        }
+
+        if (cell.getPiece()?.ownerType !== this.currentPlayer.type) {
+            return;
+        }
+
+        if (this.selectedCell) {
+            this.selectedCell.deactive();
+            this.selectedCell.render();
+        }
+
+        this.selectedCell = cell;
+        cell.active();
+        cell.render();
+    }
+
+    move(cell: Cell) {
+        this.selectedCell.deactive();
+        const killed = this.selectedCell.getPiece()?.move(this.selectedCell, cell).getKilled();
+        this.selectedCell = cell;
+
+        if (killed) {
+            if (killed.ownerType === PlayerType.UPPER) {
+                this.lowerDeadZone.put(killed);
+            } else {
+                this.upperDeadZone.put(killed);
+            }
+
+            if (killed instanceof Lion) {
+                this.state = 'END'
+            }
+        }
     }
 
     renderInfo(extraMessage?: string) {
@@ -38,7 +106,7 @@ export class Game {
 
         if (this.state === 'END') {
             this.renderInfo('END!')
-        }else{
+        } else {
             this.turn += 1;
             this.currentPlayer = (this.currentPlayer === this.lowerPlayer) ? this.upperPlayer : this.lowerPlayer;
             this.renderInfo();
