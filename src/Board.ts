@@ -1,4 +1,5 @@
 import { Piece } from "./Piece";
+import { Player } from "./Player";
 
 export interface Position {
     row: number;
@@ -11,12 +12,12 @@ export class Cell {
 
     constructor(
         public readonly position: Position,
-        private piece: Piece,
+        private piece: Piece | null | undefined,
     ) {
         this._el.classList.add('cell');
     }
 
-    put(piece: Piece) {
+    put(piece: Piece | null) {
         this.piece = piece;
     }
 
@@ -48,7 +49,7 @@ export class Board {
     cells: Cell[] = [];
     _el: HTMLElement = document.createElement('DIV');
 
-    constructor() {
+    constructor(upperPlayer: Player, lowerPlayer: Player) {
         this._el.className = 'board';
 
         for (let row = 0; row < 4; row++) {
@@ -57,7 +58,13 @@ export class Board {
             this._el.appendChild(rowEl);
 
             for (let col = 0; col < 3; col++) {
-                const cell = new Cell({ row, col }, null);
+                const piece = upperPlayer.getPieces().find(({currentPosition}) => {
+                   return currentPosition.col === col && currentPosition.row === row
+                }) ||
+                lowerPlayer.getPieces().find(({currentPosition}) => {
+                    return currentPosition.col === col && currentPosition.row === row
+                 })
+                const cell = new Cell({ row, col }, piece);
                 this.cells.push(cell);
                 rowEl.appendChild(cell._el);
             }
